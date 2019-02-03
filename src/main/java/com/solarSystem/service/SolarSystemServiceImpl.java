@@ -1,5 +1,14 @@
 package com.solarSystem.service;
 
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Tuple;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.solarSystem.model.SolarSystem;
@@ -12,6 +21,8 @@ public class SolarSystemServiceImpl {
 	private WeatherRepository weatherRepo;
 	@Autowired
 	private SolarSystemRepository solarSystemRepo;
+	@PersistenceContext
+	EntityManager em;
 
 	public Weather getWeather(int day) {
 		SolarSystem solarSystem = solarSystemRepo.findFirstByDefaultSystemTrue();
@@ -42,5 +53,16 @@ public class SolarSystemServiceImpl {
 			}
 		}
 		return res;
+	}
+
+	public List<Weather> getAllWeathers(SolarSystem solarSystem) {
+		return weatherRepo.findAllBySolarSystem(solarSystem);
+	}
+
+	public void getReportOfWeather(SolarSystem solarSystem) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Tuple> query =cb.createTupleQuery();
+		Root<Weather> root = query.from(Weather.class);
+		em.getCriteriaBuilder().
 	}
 }
