@@ -63,6 +63,6 @@ public class SolarSystemServiceImpl {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> query =cb.createTupleQuery();
 		Root<Weather> root = query.from(Weather.class);
-		em.getCriteriaBuilder().
+		//em.getCriteriaBuilder().
 	}
 }
