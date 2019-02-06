@@ -1,5 +1,6 @@
 package com.solarSystem.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -7,7 +8,9 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Selection;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -63,6 +66,12 @@ public class SolarSystemServiceImpl {
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Tuple> query =cb.createTupleQuery();
 		Root<Weather> root = query.from(Weather.class);
+		List<Selection> expressions = new ArrayList<>(); 
+		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "0"), 1).otherwise(0)).alias("weather0"));
+		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "1"), 1).otherwise(0)).alias("weather1"));
+		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "2"), 1).otherwise(0)).alias("weather2"));
+		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "3"), 1).otherwise(0)).alias("weather3"));
+		query.multiselect(expressions.stream().toArray(Selection[]::new));
 		//em.getCriteriaBuilder().
 	}
 }
