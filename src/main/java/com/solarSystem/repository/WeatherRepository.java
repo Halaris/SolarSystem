@@ -6,10 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.solarSystem.model.SolarSystem;
 import com.solarSystem.model.Weather;
+import com.solarSystem.model.WeatherId;
 
-public interface WeatherRepository extends JpaRepository<Weather, Integer> {
-	Weather findBySolarSystemAndDay(SolarSystem solarSystem, int day);
-
-	List<Weather> findAllBySolarSystem(SolarSystem solarSystem);
+public interface WeatherRepository extends JpaRepository<Weather, WeatherId> {
+	List<Weather> findAllBySystem(SolarSystem solarSystem);
 
 }

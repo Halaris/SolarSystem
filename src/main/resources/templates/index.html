@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href='//fonts.googleapis.com/css?family=Marmelad' rel='stylesheet' type='text/css'>
+  <title>Hello App Engine Standard Java 8</title>
+</head>
+<body>
+    <h1>Solar System weather report</h1>
+
+  <p>This application is an excercise to calculate the weather in a solar system basen on a group of rules.</p>
+  
+  <p>The application exposes two different endpoints.</p>.
+  <table>
+    <tr>
+      <td colspan="2" style="font-weight:bold;">Available endpoints:</td>
+    </tr>
+    <tr>
+      <td><a href='/day'>https://solarsystem-230621.appspot.com/{day}</a> This get the weather for a especific day</td>
+    </tr>
+    <tr>
+      <td><a href='/report/from/to'>https://solarsystem-230621.appspot.com/report/{from day}/{to day}]</a> This get a report for a group of days.
+      <p>En caso de que los dias solicitados no se hayan calculado todavia, la aplicacion respondera un mensaje diciendo que el reporte esta incompleto y procedera a calcularlo en el background. <br>
+      Una vez este completo, se podra volver a solicitar el reporte y se recibiran todos los datos.</p></td>
+    </tr>
+  </table>
+
+</body>
+</html>

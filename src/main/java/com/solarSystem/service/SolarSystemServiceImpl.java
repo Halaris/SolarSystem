@@ -1,38 +1,46 @@
 package com.solarSystem.service;
 
-import java.util.ArrayList;
+import java.math.BigDecimal;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Tuple;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
+import javax.persistence.StoredProcedureQuery;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.solarSystem.model.SolarSystem;
 import com.solarSystem.model.Weather;
+import com.solarSystem.model.WeatherId;
+import com.solarSystem.repository.ProcessedWeatherRepository;
 import com.solarSystem.repository.SolarSystemRepository;
 import com.solarSystem.repository.WeatherRepository;
+import com.solarSystem.service.dto.Report;
+import com.solarSystem.service.dto.ReportStatus;
+import com.solarSystem.service.dto.WeatherReport;
 
+@Service
 public class SolarSystemServiceImpl {
 	@Autowired
-	private WeatherRepository weatherRepo;
+	public WeatherRepository weatherRepo;
 	@Autowired
-	private SolarSystemRepository solarSystemRepo;
+	public SolarSystemRepository solarSystemRepo;
+	@Autowired
+	public ProcessedWeatherRepository processRepo;
+	@Autowired
+	public WeatherUpdateJob weatherJob;
 	@PersistenceContext
-	EntityManager em;
+	public EntityManager em;
 
 	public Weather getWeather(int day) {
 		SolarSystem solarSystem = solarSystemRepo.findFirstByDefaultSystemTrue();
-		Weather res = weatherRepo.findBySolarSystemAndDay(solarSystem, day);
-		if (res == null) {
+		Weather res;
+		if (weatherJob.processWeather(solarSystem, day)) {
+			res = weatherRepo.getOne(new WeatherId(solarSystem.getId(), day));
+		} else {
 			res = this.calculateWeather(solarSystem, day);
-			weatherRepo.save(res);
 		}
 		return res;
 	}
@@ -59,19 +67,34 @@ public class SolarSystemServiceImpl {
 	}
 
 	public List<Weather> getAllWeathers(SolarSystem solarSystem) {
-		return weatherRepo.findAllBySolarSystem(solarSystem);
+		return weatherRepo.findAllBySystem(solarSystem);
 	}
 
-	public void getReportOfWeather(SolarSystem solarSystem) {
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Tuple> query =cb.createTupleQuery();
-		Root<Weather> root = query.from(Weather.class);
-		List<Selection> expressions = new ArrayList<>(); 
-		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "0"), 1).otherwise(0)).alias("weather0"));
-		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "1"), 1).otherwise(0)).alias("weather1"));
-		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "2"), 1).otherwise(0)).alias("weather2"));
-		expressions.add(cb.sum(cb.<Number>selectCase().when(cb.equal(root.get("weather"), "3"), 1).otherwise(0)).alias("weather3"));
-		query.multiselect(expressions.stream().toArray(Selection[]::new));
-		//em.getCriteriaBuilder().
+	public WeatherReport WeatherReport(int from, int to) {
+		SolarSystem solarSystem = solarSystemRepo.findFirstByDefaultSystemTrue();
+		WeatherReport res = new WeatherReport();
+		if (!weatherJob.processWeather(solarSystem, to)) {
+			res.setStatus(ReportStatus.INPROCESS);
+			return res;
+		}
+
+		Report report = new Report();
+		StoredProcedureQuery spq = em.createStoredProcedureQuery("weather_report");
+		spq.registerStoredProcedureParameter("dayFrom", Integer.class, ParameterMode.IN);
+		spq.registerStoredProcedureParameter("dayTo", Integer.class, ParameterMode.IN);
+		spq.setParameter("dayFrom", from);
+		spq.setParameter("dayTo", to);
+		spq.execute();
+		List<Object[]> tuple = spq.getResultList();
+		Object[] results = tuple.get(0);
+		report.setDiasConSequia(((BigDecimal) results[4]).intValue());
+		report.setMaximaIntensidadLluvia((Double) results[1]);
+		report.setDiasOptimos(((BigDecimal) results[3]).intValue());
+		report.setDiasLluviosos(((BigDecimal) results[0]).intValue());
+		report.setDiasIndefinidos(((BigDecimal) results[2]).intValue());
+		res.setStatus(ReportStatus.COMPLETED);
+		res.setReport(report);
+		return res;
+		// em.getCriteriaBuilder().
 	}
 }

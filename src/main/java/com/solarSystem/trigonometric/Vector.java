@@ -42,4 +42,9 @@ public class Vector {
 		return Math.sqrt(Math.pow((this.getX() - v3.getX()), 2) + Math.pow((this.getY() - v3.getY()), 2));
 	}
 
+	@Override
+	public String toString() {
+		return "[" + x + ", " + y + "]";
+	}
+
 }
