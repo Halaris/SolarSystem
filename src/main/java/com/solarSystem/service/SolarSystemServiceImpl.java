@@ -84,7 +84,6 @@ public class SolarSystemServiceImpl {
 		spq.registerStoredProcedureParameter("dayTo", Integer.class, ParameterMode.IN);
 		spq.setParameter("dayFrom", from);
 		spq.setParameter("dayTo", to);
-		spq.execute();
 		List<Object[]> tuple = spq.getResultList();
 		Object[] results = tuple.get(0);
 		report.setDiasConSequia(((BigDecimal) results[4]).intValue());
