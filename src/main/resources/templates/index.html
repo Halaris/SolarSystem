@@ -5,24 +5,55 @@
   <title>Hello App Engine Standard Java 8</title>
 </head>
 <body>
-    <h1>Solar System weather report</h1>
+    <h1>Sistema de reporte de clima de un sistema solar</h1>
 
-  <p>This application is an excercise to calculate the weather in a solar system basen on a group of rules.</p>
+  <p>Esta aplicacion es un ejercicio para calcular el clima de un sistema solar basado en un grupo de reglas</p>
   
-  <p>The application exposes two different endpoints.</p>.
+  <p>La aplicacion expone dos endpoints:</p>.
   <table>
     <tr>
-      <td colspan="2" style="font-weight:bold;">Available endpoints:</td>
+      <td><a href='/day'>https://solarsystem-230621.appspot.com/{day}</a> Este endpoint obtiene el clima para un dia en especifico (y dispara el calculo de los climas hasta ese dia en el background)</td>
     </tr>
     <tr>
-      <td><a href='/day'>https://solarsystem-230621.appspot.com/{day}</a> This get the weather for a especific day</td>
-    </tr>
-    <tr>
-      <td><a href='/report/from/to'>https://solarsystem-230621.appspot.com/report/{from day}/{to day}]</a> This get a report for a group of days.
+      <td><a href='/report/from/to'>https://solarsystem-230621.appspot.com/report/{from day}/{to day}]</a>Este endpoint obtiene un reporte de un grupo de dias.
       <p>En caso de que los dias solicitados no se hayan calculado todavia, la aplicacion respondera un mensaje diciendo que el reporte esta incompleto y procedera a calcularlo en el background. <br>
       Una vez este completo, se podra volver a solicitar el reporte y se recibiran todos los datos.</p></td>
     </tr>
   </table>
-
+	<h2>Reporte</h2>
+	<p>El reporte es generado con un store procedure ejecutado en una base de datos mysql (en este caso, instanciada en el servicio Cloud sql de google)</p>
+	<p>La eleccion de hacer el reporte con un store procedure, fue porque es ligeramente mas optimo que crear la query con JPA y ejecutarla desde la JVM,<br>
+	 y porque se reduce el nivel de codigo necesario para obtener los datos propiamente dichos. Sobre este ultimo punto, al revisar el codigo, se vera que aun se necesito de bastante codigo para poder ejecutar el sp.
+	 <br>Aunque si es necesario bastante codigo para ejecutar el sp, este codigo solo es necesario para la invocacion y el mapeo de los datos (ya que los metodos provistos por spring jpa no son tan versatiles en este punto).
+	 <br>Esto hace que si se necesita cambiar como se calcula el reporte, se puede hacer con un minimo cambio en sp y solo teniendo que cambiar el mapeo necesario del lado de java.</p>
+	 <h2>Formulas</h2>
+	 <p>El ejercicio solicitaba la ejecucion de varias formulas para poder calcular los climas de los planetas.
+	 <br> Para poder definir las formulas a utilizar, se separaron las premisas de la siguiente manera:
+	 <ul>
+	 <li>Primero, se valida que los planetas esten alineados</li>
+	 <li>Segundo, en caso de estar alineados entre si, se valida si estan alineados con el sol. Esto indicara si tienen condiciones optimas o sequia</li>
+	 <li>Tercero, se calcula el triangulo que forman los planetas con su respectivo perimetro</li>
+	 <li>Por ultimo, se valida si el sol esta contenido en el triangulo, haciendo que los planetas tengan lluvia, o si no esta contenido, se declara como un clima indefinido (no especificado en la consiga)</li></ul>
+	 <br>
+	 Para estos puntos, se utilizo primero el sistema de ecuaciones de una linea vectorial (siendo este: <i>(x,y)= t(vx,vy) + (ux,uy)</i>)
+	 <br> Este mismo sistema se resuelve una vez para validar si los planetas estan alineados y tambien para validar si el sol esta alineado con ellos.
+	 <br>Por otro lado, para calcular el triangulo, se utiliza un sistema de ecuaciones derivado de las coordenadas baric&eacute;ntricas.
+	 <br>Por ultimo, debido a que para resolver estos calculos, utilize las librerias matematicas de Java y los tipos de dato Double (En vez de BigDecimal u otro tipo con mayor precision),
+	 <br> me vi obligado a incorporar un error en las formulas, que entre las distintas pruebas, encontre como un buen valor, uno que se encontrara entre 0,1 y 0,01.
+	 <br>Al final en el ejercicio decidi dejar 0.1, para generar un poco mas variacion en los resultados.
+	 <br> Sobre la desicion de usar Double y no, por ejemplo, BigDecimal, fue simplemente por la facilidad del codigo y para mantener el sistema sencillo. En caso de continuar con esta tarea, convendria cambiar el tipo de datos y ajustar el tama&ntilde;o del error.
+	 </p>
+	 
+	 <h2>Optimizaciones y mejoras:</h2>
+	 <p>Al momento de realizar este proyecto tuve un grupo de inconvenientes que no me dejaron tiempo para acomodar el codigo correctamente.
+	 <br> Por eso mismo, queria dejar constancia de los puntos que hay que arreglar del programa propiamente dicho.
+	 <ul>
+	 <li>Es necesario desacoplar los controladores de la capa de persistencia y de los mapeos a dtos (ya que uno de los controladores esta haciendo ese mapeo manualmente). Esto deberia manejarse en los servicios propiamente dicho</li>
+	 <li>Es necesario incorporar las interfaces que implementan los servicios, para evitar que sus consumidores tengan que incorporar la implementacion propiamente dicha ya que de esta forma, se esta rompiendo la inyeccion de dependencias que provee spring</li>
+	 <li>Algunas funciones del sistema puede componetizarse con mayor detalle (por ejemplo, la llamada del store procedure no deberia estar en el servicio, sino que se deberia implementar un repositorio o DAO para resolver esta tarea)</li>
+	 <li>El proceso de background esta implementado con una simple cola de tareas en un pool con un solo thread. Aunque el pool no es un problema, si es un problema que esto no se esta persistiendo y no se implemento un sistema de fallback en caso de que el sistema se caiga mientras hay procesos sin terminar.
+	 Esto deberia implementarse en, por ejemplo, una tabla de la base de datos, guardando los registros de los procesos y sus estados.</li>
+	 </ul></p>
+	 
 </body>
 </html>

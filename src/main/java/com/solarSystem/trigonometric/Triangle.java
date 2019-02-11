@@ -7,7 +7,7 @@ public class Triangle {
 	private Double perimeter;
 	private Double area;
 
-	private double error = 0.01;
+	private double error = 0.1;
 	private Double s1;
 	private Double s2;
 	private Double s3;

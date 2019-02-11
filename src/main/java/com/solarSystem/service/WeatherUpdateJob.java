@@ -58,11 +58,18 @@ public class WeatherUpdateJob {
 	private void processWeather2(SolarSystem solarSystem, int from, int to) {
 		List<Weather> weathers = new ArrayList<Weather>();
 		while (to > from) {
-			System.out.println("Calculating day: " + from);
-			weathers.add(solarSystemService.calculateWeather(solarSystem, from));
-			from++;
+			while (weathers.size() < 1000) {
+				weathers.add(solarSystemService.calculateWeather(solarSystem, from));
+				from++;
+			}
+			weatherRepo.saveAll(weathers);
+			updateProcessData(solarSystem, from, to);
+			weathers.clear();
 		}
-		weatherRepo.saveAll(weathers);
+
+	}
+
+	private void updateProcessData(SolarSystem solarSystem, int from, int to) {
 		ProcessedWeather pw = processRepo.findBySystem(solarSystem);
 		if (pw == null) {
 			pw = new ProcessedWeather();
